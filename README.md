@@ -40,6 +40,11 @@
    
 7. Clicking on the list when **SoftKeyboard** is open, clears focus on the textfield and closes the Keybaord. Similar to popular Chat apps like Whatsapp.
 
+8. **Logic** to decide whether to show Timestamp before a chat or not:
+   Compare **previousChatTimeInMillis** and **currentChatTimeInMillis** - If difference of both is more than 1 hour, show Timestamp before the current chat.
+   And
+   If it is the first chat in database response.
+
 **Architecure:**
 
 MVVM
@@ -67,4 +72,7 @@ MVVM
 
 6. **Unit Testing** is not done properly.
    - If more time: Dependency of each layer (For example, Repository), can be mocked using Mockito or MockK, and we can try to test whether each funtion is returning what its assumed to like error case, no internet case, no data from api, etc.
+
+7. **Edge To Edge** screen support is not implemented.
+   - If more time: Edge to edge can be added before the composable, and accordingly SoftKeyboard and Status beheviour can be adjusted and tested on multiple emulators with and without Navigation Bar in the bottom.
     
