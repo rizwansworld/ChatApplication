@@ -1,6 +1,5 @@
 package com.rizwan.chatapplication.components
 
-import androidx.annotation.DrawableRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -16,19 +15,23 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldColors
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
@@ -39,14 +42,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Alignment.Companion.BottomCenter
 import androidx.compose.ui.Alignment.Companion.Center
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -54,76 +62,95 @@ import com.rizwan.chatapplication.R
 import com.rizwan.chatapplication.data.Chat
 import com.rizwan.chatapplication.data.Person
 import com.rizwan.chatapplication.ui.theme.Grey40
+import com.rizwan.chatapplication.ui.theme.Grey80
 import com.rizwan.chatapplication.ui.theme.Magenta40
+import com.rizwan.chatapplication.utils.TimeUtils
 import com.rizwan.chatapplication.viewModel.MainViewModel
 import kotlinx.coroutines.launch
-import java.time.Instant
+import java.text.SimpleDateFormat
 import java.util.Calendar
-import java.util.Date
+import java.util.Locale
+import java.util.TimeZone
 
 @Composable
 fun ChatScreen() {
 
     val viewModel: MainViewModel = hiltViewModel()
     val chats: List<Chat> by viewModel.getChats().observeAsState(emptyList())
+    val chatsListState = rememberLazyListState()
 
     val focusManager = LocalFocusManager.current
+    var isSelf by remember { mutableStateOf(true) }
 
-    var message by remember { mutableStateOf("") }
+    LaunchedEffect(chats) {
+        chatsListState.animateScrollToItem(chatsListState.layoutInfo.totalItemsCount)
+    }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Black)
+            .background(Color.White)
     ) {
         Column(
             modifier = Modifier.fillMaxSize()
         ) {
             UserNameRow(
                 person = Person(name = "Sarah", icon = R.drawable.ic_launcher_background),
-                modifier = Modifier.padding(top = 60.dp, start = 20.dp, end = 20.dp, bottom = 20.dp)
+                modifier = Modifier
+                    .shadow(elevation = 20.dp, spotColor = Color.Transparent)
+                    .padding(top = 20.dp, start = 10.dp, end = 10.dp, bottom = 20.dp),
+                isSelf = isSelf,
+                onCheckedSelfSwitch = { isSelf = it }
             )
-            Box(
+
+            LazyColumn(
+                state = chatsListState,
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(
-                        Color.White, RoundedCornerShape(
-                            topStart = 30.dp, topEnd = 30.dp
-                        )
+                    .padding(
+                        start = 15.dp, top = 0.dp, end = 15.dp, bottom = 95.dp
                     )
-                    .padding(top = 25.dp)
                     .clickable(
                         indication = null,
                         interactionSource = remember { MutableInteractionSource() }
                     ) { focusManager.clearFocus() }
             ) {
-                LazyColumn(
-                    modifier = Modifier.padding(
-                        start = 15.dp,
-                        top = 25.dp,
-                        end = 15.dp,
-                        bottom = 75.dp
-                    )
-                ) {
-                    items(chats) {
-                        ChatRow(chat = it)
-                        if (it.id % 5 == 0) {
-                            Text(
-                                text = "Thursday",
-                                modifier = Modifier.fillMaxWidth(),
-                                textAlign = TextAlign.Center
-                            )
+                itemsIndexed(chats) { index, chat ->
+                    if (index == 0 || TimeUtils.isMoreThanAnHour(chats[index-1].time, chat.time)) {
+                        val annotatedString = buildAnnotatedString {
+                            withStyle(
+                                style = SpanStyle(
+                                    color = Grey80,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            ) {
+                                append(TimeUtils.getFormattedDay(chat.time))
+                            }
+                            append(" ")
+                            withStyle(
+                                style = SpanStyle(
+                                    color = Grey80,
+                                    fontWeight = FontWeight.W300,
+                                )
+                            ) {
+                                append(TimeUtils.getFormattedTime(chat.time))
+                            }
                         }
+                        Text(
+                            text = annotatedString,
+                            modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
+                            textAlign = TextAlign.Center
+                        )
                     }
+                    ChatRow(chat = chat)
                 }
             }
         }
 
         CustomTextField(
-            text = message, onValueChange = { message = it },
             modifier = Modifier
-                .padding(horizontal = 20.dp, vertical = 20.dp)
-                .align(BottomCenter)
+                .align(BottomCenter),
+            isSelf = isSelf
         )
     }
 
@@ -133,20 +160,25 @@ fun ChatScreen() {
 fun ChatRow(
     chat: Chat
 ) {
-
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalAlignment = if (!chat.isSelf) Alignment.Start else Alignment.End
+    Box(
+        modifier = Modifier.fillMaxWidth()
     ) {
         Box(
             modifier = Modifier
+                .padding(
+                    top = 5.dp,
+                    bottom = 5.dp,
+                    start = if (chat.isSelf) 90.dp else 0.dp,
+                    end = if (chat.isSelf) 0.dp else 90.dp
+                )
+                .align(if (!chat.isSelf) Alignment.CenterStart else Alignment.CenterEnd)
                 .background(
                     if (chat.isSelf) Magenta40 else Grey40,
                     RoundedCornerShape(
-                        topStart = 20.dp,
-                        topEnd = 20.dp,
-                        bottomStart = if (chat.isSelf) 20.dp else 0.dp,
-                        bottomEnd = if (chat.isSelf) 0.dp else 20.dp
+                        topStart = 18.dp,
+                        topEnd = 18.dp,
+                        bottomStart = if (chat.isSelf) 18.dp else 0.dp,
+                        bottomEnd = if (chat.isSelf) 0.dp else 18.dp
                     )
                 ),
             contentAlignment = Center
@@ -154,9 +186,9 @@ fun ChatRow(
             Text(
                 text = chat.message, style = TextStyle(
                     color = if (chat.isSelf) Color.White else Color.Black,
-                    fontSize = 15.sp
+                    fontSize = 18.sp
                 ),
-                modifier = Modifier.padding(vertical = 8.dp, horizontal = 15.dp),
+                modifier = Modifier.padding(vertical = 8.dp, horizontal = 18.dp),
                 textAlign = TextAlign.End
             )
         }
@@ -164,62 +196,69 @@ fun ChatRow(
 
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CustomTextField(
-    text: String,
     modifier: Modifier = Modifier,
-    onValueChange: (String) -> Unit
+    isSelf: Boolean
 ) {
-    TextField(
-        value = text, onValueChange = { onValueChange(it) },
-        placeholder = {
-            Text(
-                text = stringResource(R.string.type_message),
-                style = TextStyle(
-                    fontSize = 14.sp,
-                    color = Color.Black
+
+    val coroutineScope = rememberCoroutineScope()
+    val viewModel: MainViewModel = hiltViewModel()
+
+    var message by remember { mutableStateOf("") }
+
+    Box(modifier = modifier.padding(20.dp)) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            OutlinedTextField(
+                value = message, onValueChange = { message = it },
+                placeholder = {
+                    Text(
+                        text = stringResource(R.string.type_message),
+                        style = TextStyle(
+                            fontSize = 14.sp,
+                            color = Color.Black
+                        ),
+                        textAlign = TextAlign.Center
+                    )
+                },
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = Magenta40,
+                    unfocusedBorderColor = Color.Gray
                 ),
-                textAlign = TextAlign.Center
+                modifier = Modifier
+                    .weight(1f),
+                shape = CircleShape
             )
-        },
-        leadingIcon = { CommonIconButton(imageVector = Icons.Default.Add) },
-        trailingIcon = { CommonIconButton(imageVector = Icons.Default.Add) },
-        modifier = modifier.fillMaxWidth(),
-        shape = CircleShape
-    )
-
-}
-
-@Composable
-fun CommonIconButton(
-    imageVector: ImageVector
-) {
-
-    Box(
-        modifier = Modifier
-            .background(Magenta40, CircleShape)
-            .size(33.dp), contentAlignment = Center
-    ) {
-        Icon(imageVector = imageVector, contentDescription = "", modifier = Modifier.size(15.dp), tint = Color.White)
-    }
-
-}
-
-@Composable
-fun CommonIconButtonDrawable(
-    @DrawableRes icon: Int
-) {
-    Box(
-        modifier = Modifier
-            .background(Magenta40, CircleShape)
-            .size(33.dp), contentAlignment = Center
-    ) {
-        Icon(
-            painter = painterResource(id = icon), contentDescription = "",
-            tint = Color.White,
-            modifier = Modifier.size(15.dp)
-        )
+            Spacer(modifier = Modifier.width(20.dp))
+            FilledIconButton(
+                onClick = {
+                    coroutineScope.launch {
+                        viewModel.addChat(
+                            Chat(
+                                message = message,
+                                time = Calendar.getInstance().timeInMillis,
+                                isSelf = isSelf
+                            )
+                        )
+                        message = ""
+                    }
+                },
+                modifier = Modifier.size(55.dp),
+                enabled = message.isNotBlank(),
+                colors = IconButtonDefaults.filledIconButtonColors(
+                    containerColor = Magenta40,
+                    contentColor = Color.White
+                )
+            ) {
+                Icon(
+                    Icons.AutoMirrored.Filled.Send,
+                    modifier = Modifier.size(30.dp),
+                    contentDescription = stringResource(R.string.send_message)
+                )
+            }
+        }
     }
 
 }
@@ -227,55 +266,67 @@ fun CommonIconButtonDrawable(
 @Composable
 fun UserNameRow(
     modifier: Modifier = Modifier,
-    person: Person
+    person: Person,
+    isSelf: Boolean,
+    onCheckedSelfSwitch: (Boolean) -> Unit
 ) {
-
-    val coroutineScope = rememberCoroutineScope()
-    val viewModel: MainViewModel = hiltViewModel()
-
-    var isSelf by remember {
-        mutableStateOf(true)
-    }
 
     Row(
         modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Row {
+        Row(
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                contentDescription = "",
+                modifier = Modifier.size(72.dp),
+                tint = Magenta40
+            )
             Icon(
                 painter = painterResource(id = person.icon),
                 contentDescription = "",
-                modifier = Modifier.size(42.dp),
+                modifier = Modifier
+                    .size(42.dp)
+                    .clip(CircleShape),
                 tint = Color.Unspecified
             )
             Spacer(modifier = Modifier.width(10.dp))
             Text(
                 text = person.name, style = TextStyle(
-                    color = Color.White,
+                    color = Color.Black,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp
+                    fontSize = 20.sp
                 )
             )
-            Switch(checked = isSelf, onCheckedChange = {
-                isSelf = it
-            })
         }
-        Icon(
-            imageVector = Icons.Default.MoreVert,
-            contentDescription = "",
-            modifier = modifier
-                .size(24.dp)
-                .clickable { coroutineScope.launch {
-                    viewModel.addChat(
-                        Chat(
-                            message = "Shaddy",
-                            isSelf = isSelf,
-                            time = Calendar.getInstance().timeInMillis
-                        )
-                    )
-                } },
-            tint = Color.White
-        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Other", style = TextStyle(
+                    color = Magenta40,
+                    fontWeight = FontWeight.Medium,
+                    fontSize = 15.sp
+                )
+            )
+            Spacer(modifier = Modifier.width(10.dp))
+            Switch(checked = isSelf, colors  = SwitchDefaults.colors(
+                checkedTrackColor = Color.Black,
+            ), onCheckedChange = {
+                onCheckedSelfSwitch(it)
+            })
+            Spacer(modifier = Modifier.width(10.dp))
+            Text(
+                text = "Self", style = TextStyle(
+                    color = Magenta40,
+                    fontWeight = FontWeight.Medium,
+                    fontSize = 15.sp
+                )
+            )
+        }
     }
 
 }
