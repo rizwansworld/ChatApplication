@@ -4,6 +4,8 @@
    
 <img width="394" alt="Screenshot 2024-07-21 at 14 51 50" src="https://github.com/user-attachments/assets/68228072-aada-4dcc-8050-fdc976acd1b1">
 
+
+
 **Decisions:**
 
 1. Persist chats between users to Room Database.
