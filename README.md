@@ -29,6 +29,8 @@
      - Creating custom text field was easy.
 
 6. Creating shadows between UI elements is easier in Compose. Faster than traditional views.
+   
+7. Clicking on the list when Soft Keyboard is open, clears focus on the textfield and closes the Keybaord. Similar to popular Chat apps like Whatsapp.
 
 **Architecure:**
 
@@ -39,4 +41,22 @@ MVVM
 
 - Repository and UseCase can be tested in isolation.
 - Espresso tests can be run on even the simple composables.
+
+**App Limitations:**
+1. Shadow above the TextField is not perfect as in UI. Due to time-constraints, couldn't play around with it.
+  - If more time: Get the shadow right by ordering the composable inside Box.
+    
+2. The background of Back Button and Send button is a Gradient of Magenta and Yellow in given design, like the instagram logo. Only the color Magenta is added now.
+   - If more time: Create gradient and add it as background for both. Its faster to create in Compose, compared to traditional view, where we had to create a separate gradient file.
+
+3. WindowInsets Keyboard Animation can be added to enhance user experience when the keyboard opens.
+   - Now, the list jumps suddenly to the top and then the keyboard animates to its place.
+   - If more time: With the WindowInsets animation library, the list would scroll and animate along with the keyboard.
+
+4. Reply capabilities like Swipe Reply to a ChatRow can be added. Users will like it, as we are all used to it on Whatsapp.
+   
+5. The Read receipt tick icon is not added to Self chats due to time-constraint.
+
+6. Unit Testing is not done properly.
+   - If more time: Dependency of each layer (For example, Repository), can be mocked using Mockito or MockK, and we can try to test whether each funtion is returning what its assumed to like error case, no internet case, no data from api, etc.
     
