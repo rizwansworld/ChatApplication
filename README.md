@@ -1,7 +1,7 @@
-App Screenshots:
+**App Screenshots:**
 
 <img width="399" alt="Screenshot 2024-07-21 at 14 51 23" src="https://github.com/user-attachments/assets/de2a5aad-2d0a-497e-b634-2069649fa258">
-
+   
 <img width="394" alt="Screenshot 2024-07-21 at 14 51 50" src="https://github.com/user-attachments/assets/68228072-aada-4dcc-8050-fdc976acd1b1">
 
 **Decisions:**
