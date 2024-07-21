@@ -14,7 +14,7 @@
      - addChat() is a suspend functon though, it is database heavy operation, and cannot be done in UI.
 
 4. Hilt for Dependency Injection
-   **Why:**
+   - **Why:**
      - Will single instance of ChatDatabase to entire app automatically.
      - No need of maintaining a single instance object in ChatDatabase class.
      - Makes it easier to test Room database queries, using a TestModule.
